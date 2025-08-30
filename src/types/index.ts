@@ -21,6 +21,8 @@ export type {
   MonthlyDistribution,
   YearlyDistribution,
   Savings,
+  DashboardInsights,
+  DashboardSummary
 } from './summary';
 
 // Config types

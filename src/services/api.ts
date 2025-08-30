@@ -20,6 +20,8 @@ import {
   ReportResponse,
   ReportFile,
   PaginationParams,
+  DashboardInsights,
+  DashboardSummary,
 } from '../types';
 
 // Authentication API
@@ -83,6 +85,12 @@ export const summaryAPI = {
 
   updateSavings: (): Promise<{ message: string }> =>
     apiClient.put('/summary/saving/update'),
+
+  getDashboardSummary: (): Promise<DashboardSummary> =>
+    apiClient.get('/summary/dashboard'),
+
+  getDashboardInsights: (): Promise<DashboardInsights> =>
+    apiClient.get('/summary/dashboard/insights'),
 };
 
 // File Upload APIs
@@ -125,16 +133,17 @@ export const configAPI = {
   createYearlyClosingBalance: (balance: YearlyClosingBankBalance): Promise<YearlyClosingBankBalance> =>
     apiClient.post('/config/yearly-closing-bank-balance', balance),
 
-  updateYearlyClosingBalance: (balance: YearlyClosingBankBalance): Promise<YearlyClosingBankBalance> =>
-    apiClient.put('/config/yearly-closing-bank-balance', balance),
+  updateYearlyClosingBalance: (closing_balance: YearlyClosingBankBalance): Promise<YearlyClosingBankBalance> =>
+    apiClient.put('/config/yearly-closing-bank-balance', closing_balance),
 
   // System Config
   getConfig: (): Promise<Config> =>
-    apiClient.get('/config/'),
+    apiClient.get('/config/config'),
 
   updateConfig: (field_name: string, value: string): Promise<Config> =>
-    apiClient.put('/config/update', { FIELD_NAME: field_name, VALUE: value }),
+    apiClient.put('/config/config/update', { FIELD_NAME: field_name, VALUE: value }),
 };
+
 
 // Utility function to handle API errors
 export const handleApiError = (error: any): string => {

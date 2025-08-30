@@ -1,163 +1,161 @@
 // src/pages/dashboard/Dashboard.tsx
 import React from 'react';
+import { useQueries } from '@tanstack/react-query';
+import { summaryAPI } from '../../services/api';
 import { Card, CardHeader, CardBody } from '../../components/ui';
-import { 
-  ArrowTrendingUpIcon, 
+import {
+  DashboardSummary,
+  DashboardInsights,
+} from '../../types';
+import {
+  ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
   CurrencyDollarIcon,
-  BanknotesIcon,
-  CreditCardIcon,
-  ChartBarIcon
+  ChartBarIcon,
 } from '@heroicons/react/24/outline';
+import {
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  Tooltip,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  Radar,
+} from 'recharts';
 
-const metrics = [
-  {
-    id: 1,
-    label: 'Total Net Worth',
-    value: 2500000,
-    currency: '₹',
-    change: '+12.5%',
-    isPositive: true,
-    icon: CurrencyDollarIcon,
-    bgColor: 'bg-blue-50',
-    iconColor: 'text-blue-600',
-  },
-  {
-    id: 2,
-    label: 'Total Income',
-    value: 85000,
-    currency: '₹',
-    change: '+8.2%',
-    isPositive: true,
-    icon: BanknotesIcon,
-    bgColor: 'bg-green-50',
-    iconColor: 'text-green-600',
-  },
-  {
-    id: 3,
-    label: 'Total Expenses',
-    value: 42000,
-    currency: '₹',
-    change: '-3.1%',
-    isPositive: false,
-    icon: CreditCardIcon,
-    bgColor: 'bg-red-50',
-    iconColor: 'text-red-600',
-  },
-  {
-    id: 4,
-    label: 'Investment Value',
-    value: 1200000,
-    currency: '₹',
-    change: '+15.7%',
-    isPositive: true,
-    icon: ChartBarIcon,
-    bgColor: 'bg-purple-50',
-    iconColor: 'text-purple-600',
-  },
-];
+const COLORS = {
+  blue: ['#DBEAFE', '#1D4ED8'],
+  green: ['#D1FAE5', '#059669'],
+  red: ['#FEE2E2', '#DC2626'],
+  purple: ['#EDE9FE', '#7C3AED'],
+};
 
 const Dashboard: React.FC = () => {
+  const [sumQ, insQ] = useQueries({
+    queries: [
+      { queryKey: ['dashboardSummary'], queryFn: () => summaryAPI.getDashboardSummary() },
+      { queryKey: ['dashboardInsights'], queryFn: () => summaryAPI.getDashboardInsights() },
+    ],
+  });
+
+  if (sumQ.isLoading || insQ.isLoading || !sumQ.data || !insQ.data) {
+    return <div className="animate-pulse p-8">Loading…</div>;
+  }
+
+  const summary = sumQ.data as DashboardSummary;
+  const insights = insQ.data as DashboardInsights;
+
+  // Data for Charts
+  const barData = [
+    { name: 'Income', value: parseFloat(summary.TOTAL_INVESTED.replace(/[^\d.]/g, '')) },
+    { name: 'Expenses', value: parseFloat(summary.TOTAL_EXPENSES.replace(/[^\d.]/g, '')) },
+  ];
+  const pieData = [
+    { name: 'Invested', value: parseFloat(summary.TOTAL_VALUE.replace(/[^\d.]/g, '')) },
+    { name: 'Bank', value: parseFloat(summary.BANK_BALANCE.replace(/[^\d.]/g, '')) },
+  ];
+  const radarData = [
+    { subject: 'YoY Expense', A: parseFloat(insights.YOY_EXPENSE.replace('%','')) },
+    { subject: 'YoY Invest', A: parseFloat(insights.YOY_INVEST.replace('%','')) },
+    { subject: 'Port. Return', A: parseFloat(insights.PORTFOLIO_RETURN.replace('%','')) },
+  ];
+
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-8 p-8">
+      {/* Hero */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="mt-2 text-gray-600">
-            Welcome back! Here's your financial overview.
-          </p>
+          <h1 className="text-4xl font-bold">Welcome Back!</h1>
+          <p className="text-gray-600">Your financial dashboard</p>
         </div>
-        <div className="text-right">
-          <p className="text-sm text-gray-500">Last updated</p>
-          <p className="text-sm font-medium text-gray-900">
-            {new Date().toLocaleDateString('en-IN', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            })}
-          </p>
-        </div>
-      </div>
-
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {metrics.map((metric) => (
-          <Card key={metric.id} className="hover:shadow-lg transition-shadow duration-200">
-            <CardBody className="p-6">
-              {/* Icon and Label */}
-              <div className="flex items-center">
-                <div className={`p-3 rounded-lg ${metric.bgColor}`}>
-                  <metric.icon className={`h-6 w-6 ${metric.iconColor}`} />
-                </div>
-                <div className="ml-4 flex-1">
-                  <p className="text-sm font-medium text-gray-600">{metric.label}</p>
-                </div>
-              </div>
-
-              {/* Value */}
-              <div className="mt-4">
-                <div className="flex items-baseline">
-                  <p className="text-2xl font-semibold text-gray-900">
-                    {metric.currency}{metric.value.toLocaleString('en-IN')}
-                  </p>
-                </div>
-              </div>
-
-              {/* Change Indicator */}
-              <div className="mt-4 flex items-center">
-                <div className={`flex items-center ${
-                  metric.isPositive ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {metric.isPositive ? (
-                    <ArrowTrendingUpIcon className="h-4 w-4 mr-1" />
-                  ) : (
-                    <ArrowTrendingDownIcon className="h-4 w-4 mr-1" />
-                  )}
-                  <span className="text-sm font-medium">{metric.change}</span>
-                </div>
-                <span className="ml-2 text-sm text-gray-500">from last month</span>
-              </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full lg:w-auto">
+          <Card className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+            <CardBody>
+              <p className="uppercase text-xs">Net Worth</p>
+              <p className="text-2xl font-semibold mt-1">{summary.TOTAL_WEALTH}</p>
             </CardBody>
           </Card>
-        ))}
+          <Card className="bg-gradient-to-r from-green-500 to-teal-600 text-white">
+            <CardBody>
+              <p className="uppercase text-xs">Liquid Wealth</p>
+              <p className="text-2xl font-semibold mt-1">{summary.LIQUID_WEALTH}</p>
+            </CardBody>
+          </Card>
+        </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card>
-          <CardHeader 
-            title="Quick Actions" 
-            subtitle="Common tasks"
-          />
-          <CardBody className="space-y-3">
-            <button className="w-full text-left p-3 rounded-lg bg-primary-50 hover:bg-primary-100 transition-colors">
-              <span className="text-primary-700 font-medium">Add Transaction</span>
-              <p className="text-sm text-primary-600">Record a new income or expense</p>
-            </button>
-            <button className="w-full text-left p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-              <span className="text-gray-700 font-medium">Upload Data</span>
-              <p className="text-sm text-gray-600">Import from Excel or CSV</p>
-            </button>
-            <button className="w-full text-left p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-              <span className="text-gray-700 font-medium">View Reports</span>
-              <p className="text-sm text-gray-600">Generate financial reports</p>
-            </button>
+          <CardHeader title="Income vs Expenses" />
+          <CardBody>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={barData}>
+                <XAxis dataKey="name" />
+                <Tooltip />
+                <Bar dataKey="value" fill="#1D4ED8" />
+              </BarChart>
+            </ResponsiveContainer>
           </CardBody>
         </Card>
 
         <Card>
-          <CardHeader 
-            title="Recent Activity" 
-            subtitle="Latest transactions"
-          />
+          <CardHeader title="Portfolio Allocation" />
           <CardBody>
-            <div className="text-center py-8 text-gray-500">
-              <p>No recent transactions</p>
-              <p className="text-sm">Add some transactions to see them here</p>
-            </div>
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie data={pieData} dataKey="value" innerRadius={40} outerRadius={80} label>
+                  {pieData.map((entry, idx) => (
+                    <Cell key={idx} fill={[COLORS.purple[1], COLORS.blue[1]][idx]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
           </CardBody>
         </Card>
+
+        <Card>
+          <CardHeader title="Growth Insights" />
+          <CardBody>
+            <ResponsiveContainer width="100%" height={200}>
+              <RadarChart data={radarData}>
+                <PolarGrid />
+                <PolarAngleAxis dataKey="subject" />
+                <Radar name="Growth" dataKey="A" stroke="#7C3AED" fill="#8B5CF6" fillOpacity={0.6} />
+                <Tooltip />
+              </RadarChart>
+            </ResponsiveContainer>
+          </CardBody>
+        </Card>
+      </div>
+
+      {/* Insights */}
+      <div>
+        <h2 className="text-2xl font-bold mb-4">Highlights</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            { icon: CurrencyDollarIcon, label: 'Highest Category', value: insights.HIGHEST_CATEGORY },
+            { icon: ChartBarIcon, label: 'Top Asset', value: insights.TOP_ASSET },
+            { icon: ArrowTrendingUpIcon, label: 'Portfolio Return', value: insights.PORTFOLIO_RETURN },
+            { icon: ArrowTrendingDownIcon, label: 'YoY Expense', value: insights.YOY_EXPENSE },
+          ].map(({ icon: Icon, label, value }) => (
+            <Card key={label} className="hover:shadow-lg">
+              <CardBody className="flex items-center gap-4">
+                <Icon className="h-6 w-6 text-indigo-500" />
+                <div>
+                  <p className="text-xs text-gray-500">{label}</p>
+                  <p className="font-semibold">{value}</p>
+                </div>
+              </CardBody>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   );

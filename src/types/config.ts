@@ -8,13 +8,13 @@ export interface NAV {
 }
 
 export interface YearlyClosingBankBalance {
-  FINANCIAL_YEAR: string;
-  CLOSING_BALANCE: number;
+  financial_year: string;
+  closing_balance: number;
 }
 
 export interface Config {
-  LAST_UPDATED_DATE?: string;
-  INVEST_LAST_UPDATED_DATE?: string;
-  EXPENSE_LAST_UPDATED_DATE?: string;
-  FINANCIAL_LAST_UPDATED_DATE?: string;
+  last_updated_date?: string;
+  invest_last_updated_date?: string;
+  expense_last_updated_date?: string;
+  financial_last_updated_date?: string;
 }
