@@ -1,6 +1,6 @@
 // src/components/layout/Sidebar.tsx
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   HomeIcon,
@@ -8,86 +8,108 @@ import {
   ChartPieIcon,
   DocumentTextIcon,
   CloudArrowUpIcon,
-  UserIcon,
-  CogIcon,
-  ArrowRightOnRectangleIcon,
-  CurrencyDollarIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from '@heroicons/react/24/outline';
 
 const navigationItems = [
-  { name: 'Dashboard', href: '/', icon: HomeIcon },
-  { name: 'Transactions', href: '/transactions', icon: CreditCardIcon },
-  { name: 'Portfolio', href: '/portfolio', icon: ChartPieIcon },
-  { name: 'Reports', href: '/reports', icon: DocumentTextIcon },
-  { name: 'Upload Data', href: '/upload', icon: CloudArrowUpIcon },
-  { name: 'Profile', href: '/profile', icon: UserIcon },
-  { name: 'Settings', href: '/settings', icon: CogIcon },
+  { name: 'Dashboard', href: '/', icon: HomeIcon, description: 'Overview & Analytics' },
+  { name: 'Transactions', href: '/transactions', icon: CreditCardIcon, description: 'Income & Expenses' },
+  { name: 'Portfolio', href: '/portfolio', icon: ChartPieIcon, description: 'Investment Analysis' },
+  { name: 'Reports', href: '/reports', icon: DocumentTextIcon, description: 'Financial Reports' },
+  { name: 'Upload Data', href: '/upload', icon: CloudArrowUpIcon, description: 'Import Files' },
 ];
 
-export const Sidebar: React.FC = () => {
-  const { user, logout } = useAuth();
+interface SidebarProps {
+  isCollapsed: boolean;
+  onToggle: () => void;
+}
 
-  const handleLogout = () => {
-    logout();
-  };
+export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
+  const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col w-64 bg-white shadow-lg">
-      {/* Logo/Brand */}
-      <div className="flex items-center justify-center h-16 px-4 bg-primary-600">
-        <div className="flex items-center">
-          <CurrencyDollarIcon className="h-8 w-8 text-white mr-2" />
-          <span className="text-xl font-bold text-white">WealthTracker</span>
-        </div>
-      </div>
-
-      {/* User Info */}
-      <div className="flex items-center px-4 py-4 bg-gray-50 border-b">
-        <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-          <UserIcon className="h-6 w-6 text-primary-600" />
-        </div>
-        <div className="ml-3">
-          <p className="text-sm font-medium text-gray-900">{user?.username}</p>
-          <p className="text-xs text-gray-500">Personal Account</p>
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 px-4 py-4 space-y-2">
-        {navigationItems.map((item) => (
-          <NavLink
-            key={item.name}
-            to={item.href}
-            className={({ isActive }) =>
-              `group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
-                isActive
-                  ? 'bg-primary-50 text-primary-700 border-r-2 border-primary-700'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-              }`
-            }
-          >
-            <item.icon
-              className={`mr-3 h-5 w-5 transition-colors duration-200`}
-              aria-hidden="true"
-            />
-            {item.name}
-          </NavLink>
-        ))}
-      </nav>
-
-      {/* Logout Button */}
-      <div className="px-4 py-4 border-t">
+    <div className={`${isCollapsed ? 'w-16' : 'w-64'} flex flex-col h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 transition-all duration-300`}>
+      
+      {/* Top: Logo and Collapse Toggle */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+        {!isCollapsed && (
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center">
+              <span className="text-white font-bold text-sm">W</span>
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">WealthTracker</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Manage Finances</p>
+            </div>
+          </div>
+        )}
         <button
-          onClick={handleLogout}
-          className="group flex items-center w-full px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-red-50 hover:text-red-700 transition-colors duration-200"
+          onClick={onToggle}
+          className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors"
         >
-          <ArrowRightOnRectangleIcon
-            className="mr-3 h-5 w-5"
-            aria-hidden="true"
-          />
-          Sign out
+          {isCollapsed ? (
+            <ChevronRightIcon className="h-5 w-5" />
+          ) : (
+            <ChevronLeftIcon className="h-5 w-5" />
+          )}
         </button>
       </div>
+
+      {/* User Info (clickable) */}
+      {!isCollapsed && (
+        <div
+          className="p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          onClick={() => navigate('/profile')}
+        >
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+              <span className="text-white font-semibold text-sm">
+                {user?.username?.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                {user?.username}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Personal Account</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Navigation Links */}
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+        {navigationItems.map((item) => {
+          const isActive = location.pathname === item.href;
+          return (
+            <NavLink
+              key={item.name}
+              to={item.href}
+              className={`group flex items-center px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                isActive
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
+            >
+              <item.icon className={`h-5 w-5 flex-shrink-0 ${
+                isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-600'
+              }`} />
+              {!isCollapsed && (
+                <div className="ml-3">
+                  <span>{item.name}</span>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{item.description}</p>
+                </div>
+              )}
+            </NavLink>
+          );
+        })}
+      </nav>
+
+      {/* Bottom spacing */}
+      <div className="flex-0 h-6" />
     </div>
   );
 };
