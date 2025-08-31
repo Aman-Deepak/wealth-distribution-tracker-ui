@@ -17,6 +17,7 @@ import Reports from './pages/reports/Reports';
 import Upload from './pages/upload/Upload';
 import Profile from './pages/profile/Profile'
 import Settings from './pages/settings/Settings'; 
+import Portfolio from './pages/portfolio/Portfolio';
 
 // Create a client for React Query
 const queryClient = new QueryClient({
@@ -59,10 +60,7 @@ function App() {
             <Route path="/portfolio" element={
               <ProtectedRoute>
                 <AppLayout>
-                  <div className="text-center py-12">
-                    <h1 className="text-2xl font-bold text-gray-900">Portfolio</h1>
-                    <p className="text-gray-600 mt-2">Coming soon...</p>
-                  </div>
+                  <Portfolio />
                 </AppLayout>
               </ProtectedRoute>
             } />

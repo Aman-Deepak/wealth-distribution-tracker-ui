@@ -22,6 +22,8 @@ import {
   PaginationParams,
   DashboardInsights,
   DashboardSummary,
+  ChartResponse,
+  TableResponse,
 } from '../types';
 
 // Authentication API
@@ -142,6 +144,17 @@ export const configAPI = {
 
   updateConfig: (field_name: string, value: string): Promise<Config> =>
     apiClient.put('/config/config/update', { FIELD_NAME: field_name, VALUE: value }),
+};
+
+// Charts & Tables
+export const chartsAPI = {
+  getChartData: (chart_name: string, params = {}): Promise<ChartResponse> =>
+    apiClient.post<{ labels: string[]; datasets: any[] | Record<string, any> }>('/charts/data', { chart_name, params }),
+};
+
+export const tablesAPI = {
+  getTableData: (table_name: string, params = {}): Promise<TableResponse> =>
+    apiClient.post<{ html: string }>('/tables/data', { table_name, params }),
 };
 
 

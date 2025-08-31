@@ -50,3 +50,11 @@ export type {
   ApiResponse,
   PaginatedResponse,
 } from './api';
+
+// Charts types
+export type {
+  ChartRequest,
+  ChartResponse,
+  TableRequest,
+  TableResponse
+} from './charts';
