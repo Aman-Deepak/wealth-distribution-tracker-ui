@@ -10,14 +10,45 @@ import {
   CloudArrowUpIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline';
 
 const navigationItems = [
-  { name: 'Dashboard', href: '/', icon: HomeIcon, description: 'Overview & Analytics' },
-  { name: 'Transactions', href: '/transactions', icon: CreditCardIcon, description: 'Income & Expenses' },
-  { name: 'Portfolio', href: '/portfolio', icon: ChartPieIcon, description: 'Investment Analysis' },
-  { name: 'Reports', href: '/reports', icon: DocumentTextIcon, description: 'Financial Reports' },
-  { name: 'Upload Data', href: '/upload', icon: CloudArrowUpIcon, description: 'Import Files' },
+  { 
+    name: 'Dashboard', 
+    href: '/', 
+    icon: HomeIcon, 
+    description: 'Overview & Analytics',
+    color: 'blue'
+  },
+  { 
+    name: 'Transactions', 
+    href: '/transactions', 
+    icon: CreditCardIcon, 
+    description: 'Income & Expenses',
+    color: 'green'
+  },
+  { 
+    name: 'Portfolio', 
+    href: '/portfolio', 
+    icon: ChartPieIcon, 
+    description: 'Investment Analysis',
+    color: 'purple'
+  },
+  { 
+    name: 'Reports', 
+    href: '/reports', 
+    icon: DocumentTextIcon, 
+    description: 'Financial Reports',
+    color: 'orange'
+  },
+  { 
+    name: 'Upload Data', 
+    href: '/upload', 
+    icon: CloudArrowUpIcon, 
+    description: 'Import Files',
+    color: 'pink'
+  },
 ];
 
 interface SidebarProps {
@@ -31,76 +62,159 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const navigate = useNavigate();
 
   return (
-    <div className={`${isCollapsed ? 'w-16' : 'w-64'} flex flex-col h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 transition-all duration-300`}>
+    <aside 
+      className={`${
+        isCollapsed ? 'w-20' : 'w-72'
+      } h-full flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200/50 dark:border-gray-700/50 transition-all duration-300 ease-in-out`}
+    >
       
-      {/* Top: Logo and Collapse Toggle */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-        {!isCollapsed && (
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">W</span>
+      {/* Logo Section */}
+      <div className="flex items-center justify-between p-4 lg:p-5 border-b border-gray-200 dark:border-gray-700">
+        {!isCollapsed ? (
+          <>
+            <div className="flex items-center space-x-3 flex-1 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+                <SparklesIcon className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
+                  WealthTracker
+                </h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  Financial Platform
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">WealthTracker</h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Manage Finances</p>
+            
+            <button
+              onClick={onToggle}
+              className="hidden lg:flex p-2 rounded-xl text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-all duration-200 hover:scale-105 active:scale-95"
+              aria-label="Collapse sidebar"
+            >
+              <ChevronLeftIcon className="h-5 w-5" />
+            </button>
+          </>
+        ) : (
+          <div className="flex items-center justify-between w-full">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+              <SparklesIcon className="w-6 h-6 text-white" />
+            </div>
+            
+            <button
+              onClick={onToggle}
+              className="p-2 rounded-xl text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-all duration-200 hover:scale-105 active:scale-95"
+              aria-label="Expand sidebar"
+            >
+              <ChevronRightIcon className="h-5 w-5" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* User Profile as Navigation Item */}
+      <div className="pt-2 px-3 lg:px-4">
+        {!isCollapsed ? (
+          <div
+            onClick={() => navigate('/profile')}
+            className="group flex items-center px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/50 cursor-pointer"
+          >
+            <div className="flex-shrink-0">
+              <div className="relative">
+                <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center">
+                  <span className="text-white font-bold text-xs">
+                    {user?.username?.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white dark:border-gray-900"></div>
+              </div>
+            </div>
+            
+            <div className="ml-3 flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <span className="truncate">{user?.username}</span>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 mt-0.5 truncate">
+                Personal Account
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div
+            onClick={() => navigate('/profile')}
+            className="group cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-all duration-200 rounded-xl p-2 mx-auto w-fit relative"
+          >
+            <div className="relative mx-auto w-fit">
+              <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center">
+                <span className="text-white font-bold text-xs">
+                  {user?.username?.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white dark:border-gray-900"></div>
+            </div>
+            
+            {/* Tooltip */}
+            <div className="absolute left-full ml-2 px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50 shadow-lg">
+              <div className="font-medium">{user?.username}</div>
+              <div className="text-gray-300 dark:text-gray-400 text-xs">Personal Account</div>
+              <div className="absolute top-1/2 -left-1 -translate-y-1/2 w-2 h-2 bg-gray-900 dark:bg-gray-700 rotate-45"></div>
             </div>
           </div>
         )}
-        <button
-          onClick={onToggle}
-          className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors"
-        >
-          {isCollapsed ? (
-            <ChevronRightIcon className="h-5 w-5" />
-          ) : (
-            <ChevronLeftIcon className="h-5 w-5" />
-          )}
-        </button>
       </div>
 
-      {/* User Info (clickable) */}
-      {!isCollapsed && (
-        <div
-          className="p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          onClick={() => navigate('/profile')}
-        >
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
-              <span className="text-white font-semibold text-sm">
-                {user?.username?.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                {user?.username}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Personal Account</p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Navigation Links */}
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+      <nav className="flex-1 p-3 lg:p-4 space-y-1 overflow-y-auto">
         {navigationItems.map((item) => {
           const isActive = location.pathname === item.href;
+          
           return (
             <NavLink
               key={item.name}
               to={item.href}
-              className={`group flex items-center px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+              className={`group relative flex items-center px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                 isActive
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/30 dark:shadow-blue-500/20'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/50'
               }`}
             >
-              <item.icon className={`h-5 w-5 flex-shrink-0 ${
-                isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-600'
-              }`} />
+              {/* Active indicator */}
+              {isActive && !isCollapsed && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-r-full"></div>
+              )}
+              
+              {/* Icon */}
+              <div className={`flex-shrink-0 ${isCollapsed ? 'mx-auto' : ''}`}>
+                <item.icon 
+                  className={`h-5 w-5 transition-transform duration-200 ${
+                    isActive 
+                      ? 'text-white' 
+                      : 'text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300'
+                  } ${!isCollapsed && 'group-hover:scale-110'}`} 
+                />
+              </div>
+              
+              {/* Text content */}
               {!isCollapsed && (
-                <div className="ml-3">
-                  <span>{item.name}</span>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{item.description}</p>
+                <div className="ml-3 flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <span className="truncate">{item.name}</span>
+                  </div>
+                  <p className={`text-xs mt-0.5 truncate ${
+                    isActive 
+                      ? 'text-blue-100' 
+                      : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300'
+                  }`}>
+                    {item.description}
+                  </p>
+                </div>
+              )}
+
+              {/* Hover tooltip for collapsed state */}
+              {isCollapsed && (
+                <div className="absolute left-full ml-2 px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50 shadow-lg">
+                  <div className="font-medium">{item.name}</div>
+                  <div className="text-gray-300 dark:text-gray-400 text-xs">{item.description}</div>
+                  <div className="absolute top-1/2 -left-1 -translate-y-1/2 w-2 h-2 bg-gray-900 dark:bg-gray-700 rotate-45"></div>
                 </div>
               )}
             </NavLink>
@@ -108,8 +222,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         })}
       </nav>
 
-      {/* Bottom spacing */}
-      <div className="flex-0 h-6" />
-    </div>
+      {/* Footer - Version info */}
+      {!isCollapsed && (
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+            <span>Version 1.0.0</span>
+            <span>© 2026</span>
+          </div>
+        </div>
+      )}
+    </aside>
   );
 };
+

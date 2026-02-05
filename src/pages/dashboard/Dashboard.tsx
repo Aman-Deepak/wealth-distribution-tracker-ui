@@ -3,7 +3,7 @@ import React from 'react';
 import { useQueries } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { summaryAPI, chartsAPI } from '../../services/api';
-import { Card, CardHeader, CardBody, Button } from '../../components/ui';
+import { Card, CardHeader, CardBody } from '../../components/ui';
 import {
   ArrowTrendingUpIcon,
   CurrencyDollarIcon,
@@ -12,6 +12,8 @@ import {
   PresentationChartLineIcon,
   ShieldCheckIcon,
   CalendarDaysIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
 } from '@heroicons/react/24/outline';
 import {
   ResponsiveContainer,
@@ -29,6 +31,63 @@ import {
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#14B8A6'];
 
+// Loading skeleton for metric cards
+const MetricCardSkeleton = () => (
+  <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 animate-pulse">
+    <div className="flex items-start justify-between">
+      <div className="flex-1">
+        <div className="h-4 bg-gray-200 rounded w-24 mb-3"></div>
+        <div className="h-8 bg-gray-200 rounded w-32 mb-2"></div>
+        <div className="h-3 bg-gray-200 rounded w-28"></div>
+      </div>
+      <div className="w-12 h-12 bg-gray-200 rounded-xl"></div>
+    </div>
+  </div>
+);
+
+// Loading skeleton for charts
+const ChartSkeleton = () => (
+  <div className="animate-pulse">
+    <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
+    <div className="h-80 bg-gray-100 rounded flex items-center justify-center">
+      <div className="w-40 h-40 bg-gray-200 rounded-full"></div>
+    </div>
+  </div>
+);
+
+// Format currency for Indian locale
+const formatCurrency = (value: number): string => {
+  if (value >= 10000000) {
+    return `₹${(value / 10000000).toFixed(2)}Cr`;
+  } else if (value >= 100000) {
+    return `₹${(value / 100000).toFixed(2)}L`;
+  } else if (value >= 1000) {
+    return `₹${(value / 1000).toFixed(1)}K`;
+  }
+  return `₹${value.toFixed(0)}`;
+};
+
+const formatIndianCurrency = (value: number): string => {
+  return `₹${value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+};
+
+// Custom tooltip for charts
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white px-4 py-3 shadow-lg rounded-lg border border-gray-200">
+        <p className="font-medium text-gray-900 mb-2">{payload[0].name}</p>
+        {payload.map((entry: any, index: number) => (
+          <p key={index} className="text-sm text-gray-600">
+            <span className="font-medium">{entry.dataKey}:</span> {formatIndianCurrency(entry.value)}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
 
@@ -41,179 +100,336 @@ const Dashboard: React.FC = () => {
     ],
   });
 
-  if (sumQ.isLoading || insQ.isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading financial insights...</p>
-        </div>
-      </div>
-    );
-  }
+  const isLoading = sumQ.isLoading || insQ.isLoading;
+  const isChartsLoading = investBreakdownQ.isLoading || expenseFiscalQ.isLoading;
 
   const summary = sumQ.data;
   const insights = insQ.data;
   const investBreakdown = investBreakdownQ.data;
   const expenseFiscal = expenseFiscalQ.data;
 
-  // Fix parseValue to handle undefined
+  // Parse values safely
   const parseValue = (value?: string) => parseFloat(value?.replace(/[^0-9.-]/g, '') || '0') || 0;
   
   const totalInvested = parseValue(summary?.TOTAL_INVESTED);
   const totalValue = parseValue(summary?.TOTAL_VALUE);
   const bankBalance = parseValue(summary?.BANK_BALANCE);
-  const netWorth = totalValue; // Renamed from TOTAL_WEALTH
-  const totalInvestWithoutBank = totalValue - bankBalance; // Investment without bank balance
+  const netWorth = totalValue;
+  const totalInvestWithoutBank = totalValue - bankBalance;
+  const avg_monthly_exp = parseValue(summary?.AVG_MONTHLY_EXPENSE);
+  const liquidWealth = parseValue(summary?.LIQUID_WEALTH);
+  const totalPnl = parseValue(summary?.TOTAL_PNL);
+  const profitBooked = parseValue(summary?.PROFIT_BOOKED_SUM);
+  const totalLoans = parseValue(summary?.TOTAL_LOANS);
+
+  // Extract return percentage if available
+  const weightedReturn = summary?.WEIGHTED_RETURN?.replace(/[^0-9.-]/g, '') || '0';
+  const returnValue = parseFloat(weightedReturn);
+  const isPositiveReturn = returnValue >= 0;
 
   const MetricCard = ({ 
     title, 
     value, 
+    subValue,
     change, 
     icon: Icon, 
-    gradient,
+    color,
+    bgColor,
     description,
-    onClick 
+    onClick,
+    trend
   }: {
     title: string;
     value: string;
+    subValue?: string;
     change?: string;
     icon: any;
-    gradient: string;
+    color: string;
+    bgColor: string;
     description?: string;
     onClick?: () => void;
+    trend?: 'up' | 'down' | 'neutral';
   }) => (
     <div 
-      className={`${gradient} rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer`}
+      className={`bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 cursor-pointer group ${onClick ? 'hover:border-blue-300' : ''}`}
       onClick={onClick}
     >
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
-          <p className="text-white/80 text-sm font-medium mb-2">{title}</p>
-          <p className="text-3xl font-bold mb-1">{value}</p>
-          {description && (
-            <p className="text-white/70 text-xs">{description}</p>
-          )}
-          {change && (
-            <div className="flex items-center mt-2">
-              <span className="text-white/90 text-sm font-medium">{change}</span>
-            </div>
+          <p className="text-gray-600 text-sm font-medium mb-1">{title}</p>
+          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          {subValue && (
+            <p className="text-sm text-gray-500 mt-1">{subValue}</p>
           )}
         </div>
-        <div className="bg-white/20 p-3 rounded-xl backdrop-blur-sm group-hover:bg-white/30 transition-colors">
-          <Icon className="h-6 w-6" />
+        <div className={`${bgColor} p-3 rounded-xl group-hover:scale-110 transition-transform`}>
+          <Icon className={`h-6 w-6 ${color}`} />
         </div>
       </div>
+      
+      {description && (
+        <p className="text-xs text-gray-500 mb-2">{description}</p>
+      )}
+      
+      {change && (
+        <div className="flex items-center space-x-1">
+          {trend === 'up' && <ArrowUpIcon className="h-4 w-4 text-green-600" />}
+          {trend === 'down' && <ArrowDownIcon className="h-4 w-4 text-red-600" />}
+          <span className={`text-sm font-medium ${
+            trend === 'up' ? 'text-green-600' : 
+            trend === 'down' ? 'text-red-600' : 
+            'text-gray-600'
+          }`}>
+            {change}
+          </span>
+        </div>
+      )}
     </div>
   );
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="max-w-7xl mx-auto p-6 space-y-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-            Financial Dashboard
-          </h1>
-          <p className="text-gray-600 text-lg">Your comprehensive wealth management overview</p>
+  const QuickActionButton = ({ 
+    title, 
+    icon, 
+    color, 
+    route 
+  }: { 
+    title: string; 
+    icon: string; 
+    color: string; 
+    route: string; 
+  }) => (
+    <button
+      onClick={() => navigate(route)}
+      className={`${color} text-white rounded-xl p-6 hover:shadow-lg transition-all duration-200 group relative overflow-hidden`}
+    >
+      <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
+      <div className="relative text-center">
+        <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">
+          {icon}
         </div>
+        <p className="font-semibold text-sm">{title}</p>
+      </div>
+    </button>
+  );
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+  // Color mapping for consistent chart colors
+  const colorMap: Record<string, string> = {};
+  const getColor = (key: string) => {
+    if (!colorMap[key]) {
+      colorMap[key] = COLORS[Object.keys(colorMap).length % COLORS.length];
+    }
+    return colorMap[key];
+  };
+
+  if (isLoading) {
+    return (
+      <div className="h-[calc(100vh-70px)] overflow-auto bg-gray-50 p-3">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="text-center mb-6">
+            <div className="h-10 bg-gray-200 rounded w-64 mx-auto mb-2 animate-pulse"></div>
+            <div className="h-6 bg-gray-200 rounded w-96 mx-auto animate-pulse"></div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(8)].map((_, i) => (
+              <MetricCardSkeleton key={i} />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Key Metrics Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             title="Net Worth"
-            value={`₹${netWorth.toLocaleString()}`}
-            change={insights?.PORTFOLIO_RETURN}
+            value={formatCurrency(netWorth)}
+            subValue={formatIndianCurrency(netWorth)}
             icon={CurrencyDollarIcon}
-            gradient="bg-gradient-to-br from-blue-600 to-blue-700"
+            color="text-blue-600"
+            bgColor="bg-blue-50"
             description="Your total financial worth"
             onClick={() => navigate('/portfolio')}
           />
+          
           <MetricCard
             title="Total Investment"
-            value={`₹${totalInvestWithoutBank.toLocaleString()}`}
-            change={`+${((totalValue - totalInvested) / totalInvested * 100).toFixed(1)}%`}
+            value={formatCurrency(totalInvestWithoutBank)}
+            subValue={formatIndianCurrency(totalInvestWithoutBank)}
             icon={PresentationChartLineIcon}
-            gradient="bg-gradient-to-br from-purple-600 to-purple-700"
+            color="text-purple-600"
+            bgColor="bg-purple-50"
             description="Investment portfolio value"
             onClick={() => navigate('/portfolio')}
           />
+          
           <MetricCard
             title="Bank Balance"
-            value={`₹${bankBalance.toLocaleString()}`}
+            value={formatCurrency(bankBalance)}
+            subValue={formatIndianCurrency(bankBalance)}
             icon={ShieldCheckIcon}
-            gradient="bg-gradient-to-br from-teal-600 to-teal-700"
+            color="text-teal-600"
+            bgColor="bg-teal-50"
             description="Available cash reserves"
             onClick={() => navigate('/transactions')}
           />
+          
           <MetricCard
             title="Monthly Expenses"
-            value={`₹${parseValue(summary?.TOTAL_EXPENSES).toLocaleString()}`}
+            value={formatCurrency(avg_monthly_exp)}
+            subValue={formatIndianCurrency(avg_monthly_exp)}
             icon={CalendarDaysIcon}
-            gradient="bg-gradient-to-br from-red-500 to-red-600"
-            description="Current month spending"
+            color="text-red-600"
+            bgColor="bg-red-50"
+            description="Avg monthly spending (last 12 months)"
             onClick={() => navigate('/transactions')}
+          />
+          
+          <MetricCard
+            title="Liquid Assets"
+            value={formatCurrency(liquidWealth)}
+            subValue={formatIndianCurrency(liquidWealth)}
+            icon={BanknotesIcon}
+            color="text-emerald-600"
+            bgColor="bg-emerald-50"
+            description="Accessible within 1-2 days"
+            onClick={() => navigate('/portfolio')}
+          />
+          
+          <MetricCard
+            title="Portfolio Return"
+            value={formatCurrency(totalPnl)}
+            subValue={formatIndianCurrency(totalPnl)}
+            change={summary?.WEIGHTED_RETURN || '0%'}
+            icon={ArrowTrendingUpIcon}
+            color="text-indigo-600"
+            bgColor="bg-indigo-50"
+            description="Unrealized gains"
+            trend={isPositiveReturn ? 'up' : 'down'}
+            onClick={() => navigate('/portfolio')}
+          />
+          
+          <MetricCard
+            title="Profit Booked"
+            value={formatCurrency(profitBooked)}
+            subValue={formatIndianCurrency(profitBooked)}
+            icon={ArrowTrendingUpIcon}
+            color="text-green-600"
+            bgColor="bg-green-50"
+            description="Realized investment gains"
+          />
+          
+          <MetricCard
+            title="Outstanding Loans"
+            value={formatCurrency(totalLoans)}
+            subValue={formatIndianCurrency(totalLoans)}
+            icon={ChartBarIcon}
+            color="text-orange-600"
+            bgColor="bg-orange-50"
+            description="Remaining loan liabilities"
           />
         </div>
 
         {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Investment Breakdown */}
           <Card>
             <CardHeader title="Investment Breakdown" />
             <CardBody>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
+              {isChartsLoading ? (
+                <ChartSkeleton />
+              ) : (
+                <ResponsiveContainer width="100%" height={320}>
                   <PieChart>
                     <Pie
-                      data={(investBreakdown as any)?.invest_breakdown?.datasets?.[0]?.data?.map((value: number, i: number) => ({
-                        name: (investBreakdown as any).invest_breakdown.labels[i],
-                        value: value,
-                        fill: COLORS[i % COLORS.length]
-                      })) || []}
+                      data={
+                        (investBreakdown as any)?.invest_breakdown?.datasets?.[0]?.data?.map(
+                          (value: number, i: number) => ({
+                            name: (investBreakdown as any).invest_breakdown.labels[i],
+                            value,
+                          })
+                        ) || []
+                      }
                       cx="50%"
                       cy="50%"
                       innerRadius={60}
-                      outerRadius={120}
-                      paddingAngle={5}
+                      outerRadius={110}
+                      paddingAngle={3}
                       dataKey="value"
+                      nameKey="name"
                     >
-                      {(investBreakdown as any)?.invest_breakdown?.labels?.map((_: any, index: number) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
+                      {(investBreakdown as any)?.invest_breakdown?.labels?.map(
+                        (label: string) => (
+                          <Cell key={label} fill={getColor(label)} />
+                        )
+                      )}
                     </Pie>
-                    <Tooltip formatter={(value) => [`₹${Number(value).toLocaleString()}`, 'Amount']} />
-                    <Legend />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend 
+                      layout="horizontal" 
+                      verticalAlign="bottom" 
+                      align="center"
+                      wrapperStyle={{ fontSize: '12px', paddingTop: '15px' }}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
-              </div>
+              )}
             </CardBody>
           </Card>
 
           {/* Expense Fiscal Stack */}
           <Card>
-            <CardHeader title="Expense by Year & Type" />
+            <CardHeader title="Expenses by Year & Type" />
             <CardBody>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={expenseFiscal?.labels?.map((year: string, i: number) => {
-                    const entry: any = { year };
-                    expenseFiscal.datasets?.forEach((d: any) => {
-                      entry[d.label] = d.data[i] ?? 0;
-                    });
-                    return entry;
-                  }) || []}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="year" stroke="#888" />
-                    <YAxis stroke="#888" />
-                    <Tooltip formatter={(value) => [`₹${Number(value).toLocaleString()}`, 'Amount']} />
-                    <Legend />
+              {isChartsLoading ? (
+                <ChartSkeleton />
+              ) : (
+                <ResponsiveContainer width="100%" height={320}>
+                  <BarChart 
+                    data={expenseFiscal?.labels?.map((year: string, i: number) => {
+                      const entry: any = { year };
+                      expenseFiscal.datasets?.forEach((d: any) => {
+                        entry[d.label] = d.data[i] ?? 0;
+                      });
+                      return entry;
+                    }) || []}
+                    margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                    <XAxis 
+                      dataKey="year" 
+                      tick={{ fontSize: 11 }}
+                      tickLine={{ stroke: '#E5E7EB' }}
+                    />
+                    <YAxis 
+                      tickFormatter={formatCurrency}
+                      tick={{ fontSize: 11 }}
+                      tickLine={{ stroke: '#E5E7EB' }}
+                      width={70}
+                    />
+                    <Tooltip 
+                      content={<CustomTooltip />}
+                      contentStyle={{ 
+                        borderRadius: '8px', 
+                        border: '1px solid #E5E7EB',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                      }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
                     {expenseFiscal?.datasets?.map((d: any, idx: number) => (
-                      <Bar key={d.label} dataKey={d.label} fill={COLORS[idx % COLORS.length]} />
+                      <Bar 
+                        key={d.label} 
+                        dataKey={d.label} 
+                        fill={COLORS[idx % COLORS.length]}
+                        radius={[4, 4, 0, 0]}
+                      />
                     ))}
                   </BarChart>
                 </ResponsiveContainer>
-              </div>
+              )}
             </CardBody>
           </Card>
         </div>
@@ -223,25 +439,30 @@ const Dashboard: React.FC = () => {
           <CardHeader title="Quick Actions" />
           <CardBody>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                { title: 'Add Transaction', icon: '💰', color: 'bg-blue-500', route: '/transactions' },
-                { title: 'Upload Data', icon: '📁', color: 'bg-green-500', route: '/upload' },
-                { title: 'Generate Report', icon: '📊', color: 'bg-purple-500', route: '/reports' },
-                { title: 'View Portfolio', icon: '📈', color: 'bg-orange-500', route: '/portfolio' },
-              ].map((action, index) => (
-                <button
-                  key={index}
-                  onClick={() => navigate(action.route)}
-                  className={`${action.color} text-white rounded-xl p-4 hover:shadow-lg transition-all duration-200 group h-20`}
-                >
-                  <div className="text-center">
-                    <div className="text-2xl mb-1 group-hover:scale-110 transition-transform">
-                      {action.icon}
-                    </div>
-                    <p className="font-medium text-sm">{action.title}</p>
-                  </div>
-                </button>
-              ))}
+              <QuickActionButton
+                title="Add Transaction"
+                icon="💰"
+                color="bg-gradient-to-br from-blue-600 to-blue-700"
+                route="/transactions"
+              />
+              <QuickActionButton
+                title="Upload Data"
+                icon="📁"
+                color="bg-gradient-to-br from-green-600 to-green-700"
+                route="/upload"
+              />
+              <QuickActionButton
+                title="Generate Report"
+                icon="📊"
+                color="bg-gradient-to-br from-purple-600 to-purple-700"
+                route="/reports"
+              />
+              <QuickActionButton
+                title="View Portfolio"
+                icon="📈"
+                color="bg-gradient-to-br from-orange-600 to-orange-700"
+                route="/portfolio"
+              />
             </div>
           </CardBody>
         </Card>

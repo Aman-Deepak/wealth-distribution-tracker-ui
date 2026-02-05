@@ -24,6 +24,7 @@ import {
   DashboardSummary,
   ChartResponse,
   TableResponse,
+  RawTableResponse,
 } from '../types';
 
 // Authentication API
@@ -132,6 +133,10 @@ export const configAPI = {
   getYearlyClosingBalance: (financial_year?: string): Promise<YearlyClosingBankBalance> =>
     apiClient.get('/config/yearly-closing-bank-balance', { params: { financial_year } }),
 
+  //All year closing Bank Balance
+  getAllYearlyClosingBalance: (): Promise<YearlyClosingBankBalance[]> =>
+    apiClient.get('/config/list/yearly-closing-bank-balance'),
+
   createYearlyClosingBalance: (balance: YearlyClosingBankBalance): Promise<YearlyClosingBankBalance> =>
     apiClient.post('/config/yearly-closing-bank-balance', balance),
 
@@ -152,11 +157,17 @@ export const chartsAPI = {
     apiClient.post<{ labels: string[]; datasets: any[] | Record<string, any> }>('/charts/data', { chart_name, params }),
 };
 
-export const tablesAPI = {
-  getTableData: (table_name: string, params = {}): Promise<TableResponse> =>
-    apiClient.post<{ html: string }>('/tables/data', { table_name, params }),
-};
+// export const tablesAPI = {
+//   getTableData: (table_name: string, params = {}): Promise<RawTableResponse> =>
+//     apiClient.post('/tables/data/raw', { table_name, params }),
+// };
 
+export const tablesAPI = {
+  getTableData: async (table_name: string, params = {}): Promise<any> => {
+      const response = await apiClient.post('/tables/data/raw', { table_name, params });
+      return response;
+  }
+};
 
 // Utility function to handle API errors
 export const handleApiError = (error: any): string => {

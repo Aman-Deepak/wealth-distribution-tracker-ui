@@ -56,5 +56,6 @@ export type {
   ChartRequest,
   ChartResponse,
   TableRequest,
-  TableResponse
+  TableResponse,
+  RawTableResponse,
 } from './charts';
