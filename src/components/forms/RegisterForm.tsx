@@ -93,7 +93,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   const passwordStrength = getPasswordStrength(password);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
       {/* Error Alert */}
       {error && (
         <Alert variant="danger" onClose={clearError}>

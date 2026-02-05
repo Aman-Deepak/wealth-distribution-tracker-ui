@@ -13,6 +13,7 @@ import {
   MoonIcon,
   Bars3Icon,
 } from '@heroicons/react/24/outline';
+import headerBanner from '../../assets/images/wealthtracker-banner.svg';
 
 interface HeaderProps {
   onToggleSidebar?: () => void;
@@ -61,8 +62,16 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 shadow-sm">
-      <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 lg:py-4">
+    <header
+        className="sticky top-0 z-40 border-b border-gray-200/50 dark:border-gray-700/50 shadow-sm"
+        // style={{
+        //   backgroundImage: `url(${headerBanner})`,
+        //   backgroundSize: 'cover',
+        //   backgroundPosition: 'center',
+        //   filter: 'saturate(0.1)',
+        // }}
+      >
+      <div className="h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Left side - Mobile menu toggle & Page Title */}
         <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
           <button

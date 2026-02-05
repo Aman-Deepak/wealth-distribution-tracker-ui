@@ -4,6 +4,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Card, CardHeader, CardBody } from '../../components/ui';
 import { RegisterForm } from '../../components/forms/RegisterForm';
 import { useAuth } from '../../contexts/AuthContext';
+import banner from '../../assets/images/wealthtracker-banner.svg';
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -32,10 +33,17 @@ const RegisterPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-success-50 via-green-50 to-emerald-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div 
+      className="min-h-screen flex items-start justify-end py-10 px-6 lg:px-24 relative"
+      style={{
+          backgroundImage: `url(${banner})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+    >
+      <div className="w-full max-w-sm mr-6 lg:mr-12 space-y-1">
         {/* Header */}
-        <div className="text-center">
+        {/* <div className="text-center">
           <div className="mx-auto h-12 w-12 bg-success-600 rounded-xl flex items-center justify-center">
             <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
@@ -47,7 +55,7 @@ const RegisterPage: React.FC = () => {
           <p className="mt-2 text-sm text-gray-600">
             Start managing your wealth with our powerful tracker
           </p>
-        </div>
+        </div> */}
 
         {/* Register Card */}
         <Card className="shadow-xl border-0">
@@ -66,7 +74,7 @@ const RegisterPage: React.FC = () => {
         {/* Features */}
         <Card variant="bordered" className="bg-white/80 backdrop-blur-sm">
           <CardBody>
-            <div className="text-sm space-y-3">
+            <div className="text-sm space-y-1">
               <h3 className="font-medium text-gray-900">What you get:</h3>
               <div className="space-y-2">
                 <div className="flex items-center text-gray-700">
@@ -97,20 +105,6 @@ const RegisterPage: React.FC = () => {
             </div>
           </CardBody>
         </Card>
-
-        {/* Footer */}
-        <div className="text-center">
-          <p className="text-xs text-gray-500">
-            By creating an account, you agree to our{' '}
-            <Link to="/terms" className="font-medium text-success-600 hover:text-success-500">
-              Terms of Service
-            </Link>{' '}
-            and{' '}
-            <Link to="/privacy" className="font-medium text-success-600 hover:text-success-500">
-              Privacy Policy
-            </Link>
-          </p>
-        </div>
       </div>
     </div>
   );

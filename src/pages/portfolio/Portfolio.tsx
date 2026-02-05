@@ -254,7 +254,7 @@ const Portfolio: React.FC = () => {
     (activeTab === "yearly" && yearlyTableLoading);
 
   return (
-    <div className="bg-gray-50 p-6">
+    <div className="bg-gray-50 p-3">
       <div className="max-w-7xl mx-auto space-y-3">
         
         {/* Pie Charts Row */}

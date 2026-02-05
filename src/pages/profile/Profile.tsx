@@ -250,7 +250,7 @@ const Profile: React.FC = () => {
   );
 
   return (
-    <div className="bg-gray-50 p-6">
+    <div className="bg-gray-50 p-3">
       <div className="max-w-7xl mx-auto space-y-3">
         {/* Profile Header */}
         <Card>

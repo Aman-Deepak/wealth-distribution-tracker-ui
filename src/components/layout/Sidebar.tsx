@@ -12,6 +12,7 @@ import {
   ChevronRightIcon,
   SparklesIcon,
 } from '@heroicons/react/24/outline';
+import logo from '../../assets/images/wealthtracker-logo-horizontal.svg';
 
 const navigationItems = [
   { 
@@ -69,23 +70,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
     >
       
       {/* Logo Section */}
-      <div className="flex items-center justify-between p-4 lg:p-5 border-b border-gray-200 dark:border-gray-700">
+      <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200/50 dark:border-gray-700/50 shadow-sm0">
         {!isCollapsed ? (
           <>
-            <div className="flex items-center space-x-3 flex-1 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
-                <SparklesIcon className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
-                  WealthTracker
-                </h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                  Financial Platform
-                </p>
-              </div>
+            {/* Logo */}
+            <div
+              className="flex items-center cursor-pointer"
+              onClick={() => navigate('/')}
+            >
+              <img
+                src={logo}
+                alt="Wealth Tracker"
+                className="h-16 w-auto"   // ⬅️ bigger & balanced
+              />
             </div>
-            
             <button
               onClick={onToggle}
               className="hidden lg:flex p-2 rounded-xl text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-all duration-200 hover:scale-105 active:scale-95"

@@ -240,10 +240,10 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="bg-gray-50 p-3">
+      <div className="max-w-7xl mx-auto space-y-3">
         {/* Key Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <MetricCard
             title="Net Worth"
             value={formatCurrency(netWorth)}
