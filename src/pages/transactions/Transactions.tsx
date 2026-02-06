@@ -2,8 +2,8 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardHeader, CardBody, Input, Button, Modal } from '../../components/ui';
-import { incomeAPI, expenseAPI, investmentAPI, loanAPI } from '../../services/api';
-import { Income, Expense, Investment, Loan } from '../../types';
+import { incomeAPI, expenseAPI, investmentAPI, loanAPI, interestAPI } from '../../services/api';
+import { Income, Expense, Investment, Loan, Interest } from '../../types';
 import { 
   MagnifyingGlassIcon,
   PlusIcon,
@@ -14,7 +14,7 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline';
 
-type TransactionType = 'all' | 'income' | 'expense' | 'investment' | 'loan';
+type TransactionType = 'all' | 'income' | 'expense' | 'investment' | 'loan' | 'interest';
 type SortDirection = 'asc' | 'desc' | null;
 type CombinedTransaction = {
   id: number;
@@ -22,7 +22,7 @@ type CombinedTransaction = {
   description: string;
   category: string;
   amount: number;
-  type: 'income' | 'expense' | 'investment' | 'loan';
+  type: 'income' | 'expense' | 'investment' | 'loan' | 'interest';
   direction: 'up' | 'down';
   details?: any;
 };
@@ -37,7 +37,7 @@ const Transactions: React.FC = () => {
   const [directionFilters, setDirectionFilters] = useState<string[]>([]);
   const [dateSortDirection, setDateSortDirection] = useState<SortDirection>(null);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [addTransactionType, setAddTransactionType] = useState<'income' | 'expense' | 'investment' | 'loan'>('income');
+  const [addTransactionType, setAddTransactionType] = useState<'income' | 'expense' | 'investment' | 'loan' | 'interest'>('income');
 
   // Form states for different transaction types
   const [incomeForm, setIncomeForm] = useState({
@@ -47,6 +47,17 @@ const Transactions: React.FC = () => {
     day: new Date().getDate().toString().padStart(2, '0'),
     salary: '',
     tax: ''
+  });
+
+  const [interestForm, setInterestForm] = useState({
+    financial_year: new Date().getFullYear().toString(),
+    year: new Date().getFullYear().toString(),
+    month: (new Date().getMonth() + 1).toString().padStart(2, '0'),
+    day: new Date().getDate().toString().padStart(2, '0'),
+    type: '',
+    name: '',
+    cost_in: '',
+    cost_out: ''
   });
 
   const [expenseForm, setExpenseForm] = useState({
@@ -112,6 +123,14 @@ const Transactions: React.FC = () => {
     }),
   });
 
+  const { data: interests, isLoading: interestLoading, refetch: refetchInterests } = useQuery({
+    queryKey: ['interests'],
+    queryFn: () => interestAPI.getInterest({ 
+      skip: 0, 
+      limit: 10000,
+    }),
+  });
+
   const { data: expenses, isLoading: expenseLoading, refetch: refetchExpenses } = useQuery({
     queryKey: ['expenses'],
     queryFn: () => expenseAPI.getExpenses({ 
@@ -143,6 +162,17 @@ const Transactions: React.FC = () => {
       alert('Income added successfully!');
     },
     onError: () => alert('Failed to add income. Please try again.'),
+  });
+
+  const addInterestMutation = useMutation({
+    mutationFn: interestAPI.addInterest,
+    onSuccess: () => {
+      refetchInterests();
+      setShowAddModal(false);
+      resetForms();
+      alert('Interest added successfully!');
+    },
+    onError: () => alert('Failed to add interest. Please try again.'),
   });
 
   const addExpenseMutation = useMutation({
@@ -188,6 +218,7 @@ const Transactions: React.FC = () => {
     };
 
     setIncomeForm({ ...defaultData, salary: '', tax: '' });
+    setInterestForm({ ...defaultData, type: '', name: '', cost_in: '', cost_out: ''})
     setExpenseForm({ ...defaultData, type: '', category: '', cost: '' });
     setInvestmentForm({ ...defaultData, type: '', folio_number: '', name: '', type_of_order: '', units: '', nav: '', cost: '' });
     setLoanForm({ ...defaultData, type: '', name: '', interest: '', loan_amount: '', loan_repayment: '', cost: '' });
@@ -204,6 +235,17 @@ const Transactions: React.FC = () => {
           ...incomeForm,
           salary: parseFloat(incomeForm.salary),
           tax: parseFloat(incomeForm.tax) || 0,
+        });
+        break;
+      case 'interest':
+        if (!interestForm.cost_in && !interestForm.cost_out) {
+          alert('Please fill in interest amount');
+          return;
+        }
+        addInterestMutation.mutate({
+          ...interestForm,
+          cost_in: parseFloat(interestForm.cost_in) || 0,
+          cost_out: parseFloat(interestForm.cost_out) || 0,
         });
         break;
       case 'expense':
@@ -260,6 +302,23 @@ const Transactions: React.FC = () => {
           type: 'income',
           direction: 'up',
           details: income
+        });
+      });
+    }
+
+    //Add Interest
+    if (interests) {
+      interests.forEach((interest: Interest) => {
+        const isEarned = interest.cost_in !== 0;
+        combined.push({
+          id: interest.id || 0,
+          date: `${interest.year}-${interest.month.padStart(2, '0')}-${interest.day.padStart(2, '0')}`,
+          description: interest.name || 'Interest',
+          category: interest.type || 'Interest',
+          amount: Number(interest.cost_in) || Number(interest.cost_in),
+          type: 'interest',
+          direction: isEarned ? 'up' : 'down',
+          details: interest
         });
       });
     }
@@ -363,7 +422,7 @@ const Transactions: React.FC = () => {
   const allTransactions = combineTransactions();
   const filteredTransactions = filterTransactions(allTransactions);
   const sortedTransactions = sortTransactions(filteredTransactions);
-  const isLoading = incomeLoading || expenseLoading || investmentLoading || loanLoading;
+  const isLoading = incomeLoading || expenseLoading || investmentLoading || loanLoading || interestLoading;
 
   // Calculate statistics
   const statistics = useMemo(() => {
@@ -424,6 +483,8 @@ const Transactions: React.FC = () => {
         return 'bg-blue-100 text-blue-800';
       case 'loan':
         return 'bg-yellow-100 text-yellow-800';
+      case 'interest':
+        return 'bg-blue-100 text-blue-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -433,7 +494,7 @@ const Transactions: React.FC = () => {
     if (direction === 'up') {
       return <ArrowUpIcon className={`h-5 w-5 ${type === 'income' ? 'text-green-600' : type === 'loan' ? 'text-green-600' : 'text-blue-600'}`} />;
     } else {
-      return <ArrowDownIcon className={`h-5 w-5 ${type === 'expense' ? 'text-red-600' : type === 'loan' ? 'text-red-600' : 'text-blue-600'}`} />;
+      return <ArrowDownIcon className={`h-5 w-5 ${type === 'expense' ? 'text-red-600' : type === 'loan' ? 'text-red-600': type === 'interest' ? 'text-red-600' : 'text-blue-600'}`} />;
     }
   };
 
@@ -740,6 +801,80 @@ const Transactions: React.FC = () => {
             </div>
           </div>
         );
+      case 'interest':
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Year</label>
+                <Input
+                  type="text"
+                  value={interestForm.year}
+                  onChange={(e) => setInterestForm({...interestForm, year: e.target.value})}
+                  disabled={isPending}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Month</label>
+                <Input
+                  type="text"
+                  value={interestForm.month}
+                  onChange={(e) => setInterestForm({...interestForm, month: e.target.value})}
+                  disabled={isPending}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Day</label>
+                <Input
+                  type="text"
+                  value={interestForm.day}
+                  onChange={(e) => setInterestForm({...interestForm, day: e.target.value})}
+                  disabled={isPending}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                <Input
+                  type="text"
+                  value={interestForm.type}
+                  onChange={(e) => setInterestForm({...interestForm, type: e.target.value})}
+                  disabled={isPending}
+                  placeholder="e.g., MF, BANK, RD"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Name *</label>
+                <Input
+                  type="text"
+                  value={interestForm.name}
+                  onChange={(e) => setInterestForm({...interestForm, name: e.target.value})}
+                  disabled={isPending}
+                  placeholder="Investment name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Interest Earned</label>
+                <Input
+                  type="number"
+                  value={interestForm.cost_in}
+                  onChange={(e) => setInterestForm({...interestForm, cost_in: e.target.value})}
+                  disabled={isPending}
+                  placeholder="Interest Earned"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Interest paid</label>
+                <Input
+                  type="number"
+                  value={interestForm.cost_out}
+                  onChange={(e) => setInterestForm({...interestForm, cost_out: e.target.value})}
+                  disabled={isPending}
+                  placeholder="Interest paid"
+                />
+              </div>
+            </div>
+          </div>
+        );
       case 'loan':
         return (
           <div className="space-y-4">
@@ -876,6 +1011,7 @@ const Transactions: React.FC = () => {
               <option value="expense">Expenses</option>
               <option value="investment">Investments</option>
               <option value="loan">Loans</option>
+              <option value="interest">Interests</option>
             </select>
 
             {/* Categories Filter */}
@@ -1250,6 +1386,7 @@ const Transactions: React.FC = () => {
                 <option value="expense">Expense</option>
                 <option value="investment">Investment</option>
                 <option value="loan">Loan</option>
+                <option value="interest">Interest</option>
               </select>
             </div>
 
@@ -1268,10 +1405,12 @@ const Transactions: React.FC = () => {
                 variant="primary"
                 onClick={handleAddTransaction}
                 disabled={addIncomeMutation.isPending || addExpenseMutation.isPending || 
-                         addInvestmentMutation.isPending || addLoanMutation.isPending}
+                         addInvestmentMutation.isPending || addLoanMutation.isPending ||
+                         addInterestMutation.isPending}
               >
                 {(addIncomeMutation.isPending || addExpenseMutation.isPending || 
-                  addInvestmentMutation.isPending || addLoanMutation.isPending) 
+                  addInvestmentMutation.isPending || addLoanMutation.isPending ||
+                  addInterestMutation.isPending) 
                   ? 'Adding...' : 'Add Transaction'}
               </Button>
             </div>

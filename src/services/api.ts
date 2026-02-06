@@ -6,6 +6,7 @@ import {
   AuthToken,
   UserProfile,
   Income,
+  Interest,
   Expense,
   Investment,
   Loan,
@@ -49,6 +50,14 @@ export const incomeAPI = {
 
   addIncome: (income: Omit<Income, 'id'>): Promise<Income> =>
     apiClient.post('/income', income),
+};
+
+export const interestAPI = {
+  getInterest: (params?: PaginationParams): Promise<Interest[]> =>
+    apiClient.get('/interest', { params }),
+
+  addInterest: (interest: Omit<Interest, 'id'>): Promise<Interest> =>
+    apiClient.post('/interest', interest),
 };
 
 export const expenseAPI = {

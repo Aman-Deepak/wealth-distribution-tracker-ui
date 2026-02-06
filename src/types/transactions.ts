@@ -9,6 +9,18 @@ export interface Income {
   tax: number;
 }
 
+export interface Interest {
+  id?: number;
+  financial_year: string;
+  year: string;
+  month: string;
+  day: string;
+  type: string;
+  name: string;
+  cost_in: number;
+  cost_out: number;
+}
+
 export interface Expense {
   id?: number;
   financial_year: string;

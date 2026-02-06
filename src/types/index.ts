@@ -11,6 +11,7 @@ export type {
 // Transaction types  
 export type {
   Income,
+  Interest,
   Expense,
   Investment,
   Loan,
