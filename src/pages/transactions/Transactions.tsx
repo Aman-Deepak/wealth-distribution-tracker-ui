@@ -2,8 +2,8 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardHeader, CardBody, Input, Button, Modal } from '../../components/ui';
-import { incomeAPI, expenseAPI, investmentAPI, loanAPI, interestAPI } from '../../services/api';
-import { Income, Expense, Investment, Loan, Interest } from '../../types';
+import { incomeAPI, expenseAPI, investmentAPI, loanAPI, interestAPI, taxAPI } from '../../services/api';
+import { Income, Expense, Investment, Loan, Interest, Tax } from '../../types';
 import { 
   MagnifyingGlassIcon,
   PlusIcon,
@@ -14,7 +14,7 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline';
 
-type TransactionType = 'all' | 'income' | 'expense' | 'investment' | 'loan' | 'interest';
+type TransactionType = 'all' | 'income' | 'expense' | 'investment' | 'loan' | 'interest' | 'tax';
 type SortDirection = 'asc' | 'desc' | null;
 type CombinedTransaction = {
   id: number;
@@ -22,7 +22,7 @@ type CombinedTransaction = {
   description: string;
   category: string;
   amount: number;
-  type: 'income' | 'expense' | 'investment' | 'loan' | 'interest';
+  type: 'income' | 'expense' | 'investment' | 'loan' | 'interest' | 'tax';
   direction: 'up' | 'down';
   details?: any;
 };
@@ -37,7 +37,7 @@ const Transactions: React.FC = () => {
   const [directionFilters, setDirectionFilters] = useState<string[]>([]);
   const [dateSortDirection, setDateSortDirection] = useState<SortDirection>(null);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [addTransactionType, setAddTransactionType] = useState<'income' | 'expense' | 'investment' | 'loan' | 'interest'>('income');
+  const [addTransactionType, setAddTransactionType] = useState<'income' | 'expense' | 'investment' | 'loan' | 'interest' | 'tax'>('income');
 
   // Form states for different transaction types
   const [incomeForm, setIncomeForm] = useState({
@@ -45,8 +45,20 @@ const Transactions: React.FC = () => {
     year: new Date().getFullYear().toString(),
     month: (new Date().getMonth() + 1).toString().padStart(2, '0'),
     day: new Date().getDate().toString().padStart(2, '0'),
-    salary: '',
-    tax: ''
+    type: '',
+    name: '',
+    amount: ''
+  });
+
+  const [taxForm, setTaxForm] = useState({
+    financial_year: new Date().getFullYear().toString(),
+    year: new Date().getFullYear().toString(),
+    month: (new Date().getMonth() + 1).toString().padStart(2, '0'),
+    day: new Date().getDate().toString().padStart(2, '0'),
+    type: '',
+    name: '',
+    amount: '',
+    refund: ''
   });
 
   const [interestForm, setInterestForm] = useState({
@@ -57,7 +69,8 @@ const Transactions: React.FC = () => {
     type: '',
     name: '',
     cost_in: '',
-    cost_out: ''
+    cost_out: '',
+    credit_in: 0
   });
 
   const [expenseForm, setExpenseForm] = useState({
@@ -123,6 +136,14 @@ const Transactions: React.FC = () => {
     }),
   });
 
+  const { data: taxes, isLoading: taxLoading, refetch: refetchTaxes } = useQuery({
+    queryKey: ['taxes'],
+    queryFn: () => taxAPI.getTax({ 
+      skip: 0, 
+      limit: 10000,
+    }),
+  });
+
   const { data: interests, isLoading: interestLoading, refetch: refetchInterests } = useQuery({
     queryKey: ['interests'],
     queryFn: () => interestAPI.getInterest({ 
@@ -162,6 +183,17 @@ const Transactions: React.FC = () => {
       alert('Income added successfully!');
     },
     onError: () => alert('Failed to add income. Please try again.'),
+  });
+
+  const addTaxMutation = useMutation({
+    mutationFn: taxAPI.addTax,
+    onSuccess: () => {
+      refetchTaxes();
+      setShowAddModal(false);
+      resetForms();
+      alert('Tax added successfully!');
+    },
+    onError: () => alert('Failed to add tax. Please try again.'),
   });
 
   const addInterestMutation = useMutation({
@@ -217,8 +249,9 @@ const Transactions: React.FC = () => {
       day: currentDate.getDate().toString().padStart(2, '0'),
     };
 
-    setIncomeForm({ ...defaultData, salary: '', tax: '' });
-    setInterestForm({ ...defaultData, type: '', name: '', cost_in: '', cost_out: ''})
+    setIncomeForm({ ...defaultData, type: '', name: '', amount: ''});
+    setTaxForm({ ...defaultData, type: '', name: '', amount: '', refund: ''});
+    setInterestForm({ ...defaultData, type: '', name: '', cost_in: '', cost_out: '', credit_in: 0})
     setExpenseForm({ ...defaultData, type: '', category: '', cost: '' });
     setInvestmentForm({ ...defaultData, type: '', folio_number: '', name: '', type_of_order: '', units: '', nav: '', cost: '' });
     setLoanForm({ ...defaultData, type: '', name: '', interest: '', loan_amount: '', loan_repayment: '', cost: '' });
@@ -227,14 +260,24 @@ const Transactions: React.FC = () => {
   const handleAddTransaction = () => {
     switch (addTransactionType) {
       case 'income':
-        if (!incomeForm.salary) {
-          alert('Please fill in salary amount');
+        if (!incomeForm.amount) {
+          alert('Please fill in income amount');
           return;
         }
         addIncomeMutation.mutate({
           ...incomeForm,
-          salary: parseFloat(incomeForm.salary),
-          tax: parseFloat(incomeForm.tax) || 0,
+          amount: parseFloat(incomeForm.amount),
+        });
+        break;
+      case 'tax':
+        if (!taxForm.amount && !taxForm.refund) {
+          alert('Please fill in tax amount');
+          return;
+        }
+        addTaxMutation.mutate({
+          ...taxForm,
+          amount: parseFloat(taxForm.amount) || 0,
+          refund: parseFloat(taxForm.amount) || 0,
         });
         break;
       case 'interest':
@@ -296,12 +339,29 @@ const Transactions: React.FC = () => {
         combined.push({
           id: income.id || 0,
           date: `${income.year}-${income.month.padStart(2, '0')}-${income.day.padStart(2, '0')}`,
-          description: 'Salary',
-          category: 'Income',
-          amount: Number(income.salary) || 0,
+          description: income.name,
+          category: income.type,
+          amount: Number(income.amount) || 0,
           type: 'income',
           direction: 'up',
           details: income
+        });
+      });
+    }
+
+    // Add taxes
+    if (taxes) {
+      taxes.forEach((tax: Tax) => {
+        const tax_paid = tax.amount == 0;
+        combined.push({
+          id: tax.id || 0,
+          date: `${tax.year}-${tax.month.padStart(2, '0')}-${tax.day.padStart(2, '0')}`,
+          description: tax.name,
+          category: tax.type,
+          amount: Number(tax.amount) || 0,
+          type: 'tax',
+          direction: tax_paid ? 'down' : 'up',
+          details: tax
         });
       });
     }
@@ -422,7 +482,7 @@ const Transactions: React.FC = () => {
   const allTransactions = combineTransactions();
   const filteredTransactions = filterTransactions(allTransactions);
   const sortedTransactions = sortTransactions(filteredTransactions);
-  const isLoading = incomeLoading || expenseLoading || investmentLoading || loanLoading || interestLoading;
+  const isLoading = incomeLoading || expenseLoading || investmentLoading || loanLoading || interestLoading || taxLoading;
 
   // Calculate statistics
   const statistics = useMemo(() => {
@@ -480,8 +540,10 @@ const Transactions: React.FC = () => {
       case 'expense':
         return 'bg-red-100 text-red-800';
       case 'investment':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 text-blue-800'; 
       case 'loan':
+        return 'bg-black-100 text-black-800';
+      case 'tax':
         return 'bg-yellow-100 text-yellow-800';
       case 'interest':
         return 'bg-blue-100 text-blue-800';
@@ -567,7 +629,8 @@ const Transactions: React.FC = () => {
 
   const renderAddTransactionForm = () => {
     const isPending = addIncomeMutation.isPending || addExpenseMutation.isPending || 
-                     addInvestmentMutation.isPending || addLoanMutation.isPending;
+                     addInvestmentMutation.isPending || addLoanMutation.isPending ||
+                     addInterestMutation.isPending || addTaxMutation.isPending;
 
     switch (addTransactionType) {
       case 'income':
@@ -611,23 +674,116 @@ const Transactions: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Salary *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
                 <Input
-                  type="number"
-                  value={incomeForm.salary}
-                  onChange={(e) => setIncomeForm({...incomeForm, salary: e.target.value})}
+                  type="text"
+                  value={incomeForm.type}
+                  onChange={(e) => setIncomeForm({...incomeForm, type: e.target.value})}
                   disabled={isPending}
-                  placeholder="Enter salary amount"
+                  placeholder="Income source e.g., Salary, RSU"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tax</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Name *</label>
+                <Input
+                  type="text"
+                  value={incomeForm.name}
+                  onChange={(e) => setIncomeForm({...incomeForm, name: e.target.value})}
+                  disabled={isPending}
+                  placeholder="Income source name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Amount *</label>
                 <Input
                   type="number"
-                  value={incomeForm.tax}
-                  onChange={(e) => setIncomeForm({...incomeForm, tax: e.target.value})}
+                  value={incomeForm.amount}
+                  onChange={(e) => setIncomeForm({...incomeForm, amount: e.target.value})}
+                  disabled={isPending}
+                  placeholder="Enter income amount"
+                />
+              </div>
+            </div>
+          </div>
+        );
+      case 'tax':
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Year</label>
+                <Input
+                  type="text"
+                  value={taxForm.year}
+                  onChange={(e) => setTaxForm({...taxForm, year: e.target.value})}
+                  disabled={isPending}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Month</label>
+                <Input
+                  type="text"
+                  value={taxForm.month}
+                  onChange={(e) => setTaxForm({...taxForm, month: e.target.value})}
+                  disabled={isPending}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Day</label>
+                <Input
+                  type="text"
+                  value={taxForm.day}
+                  onChange={(e) => setTaxForm({...taxForm, day: e.target.value})}
+                  disabled={isPending}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Financial Year</label>
+                <Input
+                  type="text"
+                  value={taxForm.financial_year}
+                  onChange={(e) => setTaxForm({...taxForm, financial_year: e.target.value})}
+                  disabled={isPending}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                <Input
+                  type="text"
+                  value={taxForm.type}
+                  onChange={(e) => setTaxForm({...taxForm, type: e.target.value})}
+                  disabled={isPending}
+                  placeholder="Tax category e.g., TDS, LTCG, STCG"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Name *</label>
+                <Input
+                  type="text"
+                  value={taxForm.name}
+                  onChange={(e) => setTaxForm({...taxForm, name: e.target.value})}
+                  disabled={isPending}
+                  placeholder="Tax source name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Amount *</label>
+                <Input
+                  type="number"
+                  value={taxForm.amount}
+                  onChange={(e) => setTaxForm({...taxForm, amount: e.target.value})}
                   disabled={isPending}
                   placeholder="Enter tax amount"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Refund</label>
+                <Input
+                  type="number"
+                  value={taxForm.amount}
+                  onChange={(e) => setTaxForm({...taxForm, refund: e.target.value})}
+                  disabled={isPending}
+                  placeholder="Enter tax refund amount"
                 />
               </div>
             </div>
@@ -872,6 +1028,21 @@ const Transactions: React.FC = () => {
                   placeholder="Interest paid"
                 />
               </div>
+              <div>
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={interestForm.credit_in === 1}
+                    onChange={(e) => setInterestForm({
+                      ...interestForm, 
+                      credit_in: e.target.checked ? 1 : 0
+                    })}
+                    disabled={isPending}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Is credited?</span>
+                </label>
+              </div>
             </div>
           </div>
         );
@@ -1012,6 +1183,7 @@ const Transactions: React.FC = () => {
               <option value="investment">Investments</option>
               <option value="loan">Loans</option>
               <option value="interest">Interests</option>
+              <option value="tax">Taxes</option>
             </select>
 
             {/* Categories Filter */}
@@ -1387,6 +1559,7 @@ const Transactions: React.FC = () => {
                 <option value="investment">Investment</option>
                 <option value="loan">Loan</option>
                 <option value="interest">Interest</option>
+                <option value="tax">Taxes</option>
               </select>
             </div>
 
@@ -1406,11 +1579,11 @@ const Transactions: React.FC = () => {
                 onClick={handleAddTransaction}
                 disabled={addIncomeMutation.isPending || addExpenseMutation.isPending || 
                          addInvestmentMutation.isPending || addLoanMutation.isPending ||
-                         addInterestMutation.isPending}
+                         addInterestMutation.isPending || addTaxMutation.isPending}
               >
                 {(addIncomeMutation.isPending || addExpenseMutation.isPending || 
                   addInvestmentMutation.isPending || addLoanMutation.isPending ||
-                  addInterestMutation.isPending) 
+                  addInterestMutation.isPending || addTaxMutation.isPending) 
                   ? 'Adding...' : 'Add Transaction'}
               </Button>
             </div>

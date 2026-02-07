@@ -5,8 +5,21 @@ export interface Income {
   year: string;
   month: string;
   day: string;
-  salary: number;
-  tax: number;
+  type: string;
+  name: string;
+  amount: number;
+}
+
+export interface Tax {
+  id?: number;
+  financial_year: string;
+  year: string;
+  month: string;
+  day: string;
+  type: string;
+  name: string;
+  amount: number;
+  refund?: number;
 }
 
 export interface Interest {
@@ -17,8 +30,9 @@ export interface Interest {
   day: string;
   type: string;
   name: string;
-  cost_in: number;
-  cost_out: number;
+  cost_in?: number;
+  cost_out?: number;
+  credit_in?: number;
 }
 
 export interface Expense {

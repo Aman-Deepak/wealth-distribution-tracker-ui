@@ -10,6 +10,7 @@ import {
   Expense,
   Investment,
   Loan,
+  Tax,
   MonthlyDistribution,
   YearlyDistribution,
   Savings,
@@ -50,6 +51,14 @@ export const incomeAPI = {
 
   addIncome: (income: Omit<Income, 'id'>): Promise<Income> =>
     apiClient.post('/income', income),
+};
+
+export const taxAPI = {
+  getTax: (params?: PaginationParams): Promise<Tax[]> =>
+    apiClient.get('/tax', { params }),
+
+  addTax: (tax: Omit<Tax, 'id'>): Promise<Tax> =>
+    apiClient.post('/tax', tax),
 };
 
 export const interestAPI = {

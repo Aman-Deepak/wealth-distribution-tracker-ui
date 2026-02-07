@@ -15,6 +15,7 @@ export type {
   Expense,
   Investment,
   Loan,
+  Tax,
 } from './transactions';
 
 // Summary types
